@@ -14,5 +14,6 @@ cmake ..
 4. Go to the build_xxx directory and launch your project.
 
 
+How to make it?
 
 
