@@ -1,7 +1,15 @@
 ///////////////////////////////////////////////////////
-// BC++ book
+// Written by Boguslaw Cyganek, 2019
 ///////////////////////////////////////////////////////
-// by Boguslaw Cyganek, Wiley, 2019
+//
+// When using this code please cite the following paper:
+//
+// "How orthogonal are we? A note on fast and accurate 
+// inner product computation in the floating-point arithmetic"
+// by Boguslaw Cyganek and Kazimierz Wiatr 
+// First International Conference on SOCIETAL AUTOMATION
+// September 4-6, 2019, Krakow, Poland
+//
 ///////////////////////////////////////////////////////
 
 
@@ -124,21 +132,6 @@ namespace CppBook
 
 }
 
-
-//void MathFun( int iters, double weight )
-//{
-//	for( int i = 0; i < iters; ++ i )
-//		cout << sqrt( i * weight ) << endl;
-//}
-//
-//void TestFunctionTimeMeasurement( void )
-//{
-//	auto funTimer { CppBook::LTimer::measureFuncTiming };
-//
-//	auto run_time = funTimer( MathFun, 234, 0.13 );
-//
-//	cout << "MathFun run-time: " << run_time << " [ms]" << endl;
-//}
 
 
 void MathFun_RandTest( int iters, double eps, double & result )
