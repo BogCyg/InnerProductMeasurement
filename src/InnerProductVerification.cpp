@@ -1,9 +1,16 @@
-﻿///////////////////////////////////////////////////////
-// BC++ book
 ///////////////////////////////////////////////////////
-// by Boguslaw Cyganek, Wiley, 2019
+// Written by Boguslaw Cyganek, 2019
 ///////////////////////////////////////////////////////
-
+//
+// When using this code please cite the following paper:
+//
+// "How orthogonal are we? A note on fast and accurate 
+// inner product computation in the floating-point arithmetic"
+// by Boguslaw Cyganek and Kazimierz Wiatr 
+// First International Conference on SOCIETAL AUTOMATION
+// September 4-6, 2019, Krakow, Poland
+//
+///////////////////////////////////////////////////////
 
 
 #include <vector>
@@ -64,7 +71,6 @@ namespace InnerProducts
 		private:
 
 			// xxxxxxxxxxxxxxxxxxx
-
 			struct _908_sandbox
 			{
 	
@@ -121,7 +127,7 @@ namespace InnerProducts
 				}
 
 
-				void Generate( /*double * original_list, int MAXNUM*/DVec & inVec, int deltaExp, int _pFlag )
+				void Generate( DVec & inVec, int deltaExp, int _pFlag )
 				{
 					assert( _pFlag >= 1 && _pFlag <= 4 );		// inherited from 908
 					pflag = _pFlag;
@@ -132,21 +138,12 @@ namespace InnerProducts
 					srand((unsigned)time(NULL));
 					int i;
 
-					//double *original_list;
 					double *original_list = & inVec[ 0 ];
 
 					double st=0;
 	
-					//double result_ORS=-0.1, result_iFastSum=-0.1, result_OnlineExactSum=-0.1,
-					//	result_OnlineExactSum_AddNumber=-0.1,
-					//	result_OnlineExactSum_AddArray=-0.1;
 
-					//vector< double >	data_vec( MAXNUM );
-					//original_list = & data_vec[ 0 ];
-					//original_list=new double[MAXNUM+1];
-					//num_list=new double[MAXNUM+1];
 
-					//for(i=1;i<=MAXNUM;i++)
 					for(i=0;i<MAXNUM;i++)
 					{
 						original_list[i]=(Rand(deltaExp));
@@ -156,18 +153,16 @@ namespace InnerProducts
 
 					// Anderson's ill-conditioned data
 					if(pflag==3) 
-						//for(i=1;i<=MAXNUM;i++)
 						for(i=0;i<MAXNUM;i++)
 							original_list[i]-=st/MAXNUM;
 
 					//randomly change the order
-					//for(i=1;i<=MAXNUM*2;i++)
 					for(i=0;i<MAXNUM*2;i++)
 					{
-						int x=rand()%MAXNUM/*+1*/;
-						int y=rand()%MAXNUM/*+1*/;
+						int x=rand()%MAXNUM;
+						int y=rand()%MAXNUM;
 						while(x==y)
-							y=rand()%MAXNUM/*+1*/;
+							y=rand()%MAXNUM;
 						double temp=original_list[x];
 						original_list[x]=original_list[y];
 						original_list[y]=temp;
@@ -178,8 +173,6 @@ namespace InnerProducts
 
 				}
 			};
-
-
 
 			// xxxxxxxxxxxxxxxxxxx
 
@@ -194,34 +187,6 @@ namespace InnerProducts
 				_908_obj.Generate( inVec, deltaExp, flag );
 			}
 
-
-
-#if 0
-
-			// Well conditioned
-			void Fill_Numerical_Data_1( DVec & inVec, ST num_of_data, int deltaExp = 10 )
-			{
-				Fill_Numerical_Data_No( 1, inVec, num_of_data, deltaExp );
-			}
-
-			// Random
-			void Fill_Numerical_Data_2( DVec & inVec, ST num_of_data, int deltaExp = 10 )
-			{
-				Fill_Numerical_Data_No( 2, inVec, num_of_data, deltaExp );
-			}
-
-			// Anderson's
-			void Fill_Numerical_Data_3( DVec & inVec, ST num_of_data, int deltaExp = 10 )
-			{
-				Fill_Numerical_Data_No( 3, inVec, num_of_data, deltaExp );
-			}
-
-			// Exact sum equals zero
-			void Fill_Numerical_Data_4( DVec & inVec, ST num_of_data, int deltaExp = 10 )
-			{
-				Fill_Numerical_Data_No( 4, inVec, num_of_data, deltaExp );
-			}
-#endif
 
 			void Fill_Numerical_Data_MersenneUniform( DVec & inVec, ST num_of_data, DT kDataMag )
 			{
@@ -260,16 +225,6 @@ namespace InnerProducts
 namespace InnerProducts
 {
 
-	//using DVec = vector< double >;
-	//using DT = DVec::value_type;
-	//using ST = DVec::size_type;
-
-	//using std::inner_product;
-	//using std::transform;
-	//using std::accumulate;
-	//using std::sort;
-
-
 	auto InnerProduct_StdAlg( const DVec & v, const DVec & w )
 	{
 		// The last argument is an initial value
@@ -293,20 +248,14 @@ namespace InnerProducts
 		DVec z( std::min( v.size(), w.size() ) );		// Stores element-wise products
 
 		// Elementwise multiplication: c = a .* b
-		//transform(	v.begin(), v.end(), w.begin(), 
-		//			back_inserter( z ), 
-		//			[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
 
 		transform(	std::execution::par, v.begin(), v.end(), w.begin(), 
 					z.begin(), 
 					[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
 
 		// Sort in descending order.
-		//sort( z.begin(), z.end() );		// Is it magic?
-		sort( z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return ! ( p < q ); } );		// For mixed signed Higham recommends a decreasing order
-		//sort( z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
-		//sort( std::execution::par, z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
-	
+		std::sort( z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return fabs( p ) < fabs( q ); } );		// Is it magic?
+
 		// The last argument is an initial value
 		return accumulate( z.begin(), z.end(), DT() );
 	}
@@ -317,19 +266,8 @@ namespace InnerProducts
 	{
 		// Having sort we need to apply a SERIAL accumulate to have GOOD results.
 		// This happens because std::reduce will brake the order. Simple.
-		//sort( std::execution::par, v.begin(), v.end() );		// make it parallel ??	==> add fabs this is IMPORTANT !!!
-		sort( std::execution::par, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return ! ( p < q ); } );		// Is it magic?
-		//sort( std::execution::par/*par_unseq*/, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
+		std::sort( std::execution::par, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return fabs( p ) < fabs( q ); } );		// Is it magic?																																		
 		return accumulate( v.begin(), v.end(), DT() );		// This is IMPORTANT - we can sort in PARALLEL, but then we must accumulate in SERIAL (not to spoil the order)
-		//return std::reduce(	std::execution::par,
-		//								v.begin(), v.end(), DT()
-		//							);
-		//return std::transform_reduce(	std::execution::par,
-		//								v.begin(), v.end(), DT(),
-		//								[] ( const auto a ) { return a; },						// unary_op is applied to each element in the sequence
-		//								[] ( const auto a, const auto b ) { return a + b; }		// binary_op reduces the result of unary_op and initial val
-		//							);
-	
 	}
 
 
@@ -376,8 +314,7 @@ namespace InnerProducts
 	// v will be changed
 	auto Kahan_Sort_And_Sum( DVec & v )
 	{
-		//sort( std::execution::par, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );	
-		sort( std::execution::par, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return ! ( p < q ); } );	
+		std::sort( std::execution::par, v.begin(), v.end(), [] ( const DT & p, const DT & q ) { return fabs( p ) < fabs( q ); } );		// Is it magic?
 		return Kahan_Sum( v );
 	}
 
@@ -448,263 +385,6 @@ namespace InnerProducts
 
 
 
-	// Other version of the Kahan algorithms - unrolled to check speed up
-	auto InnerProduct_KahanAlg_Unrolled( const double * v, const double * w, const size_t kElems )
-	{
-		DT theSum {};
-
-		// volatile prevents a compiler from applying any optimization
-		// on the object since it can be changed by someone else, etc.,
-		// in a way that cannot be foreseen by the compiler.
-
-		const size_t kLevels = 5;
-
-		/*const*/ size_t kRepeat	= kElems / kLevels;
-		const size_t kLeft		= kElems % kLevels;
-
-
-		volatile DT c {};		// a "correction" coefficient
-
-		DT y {}, t {};
-		
-		ST i { 0 };
-		//for( i = 0; i < kRepeat; i += kLevels )
-		while( kRepeat -- != 0 )
-		{
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-		}
-
-
-		// Process what left
-		switch( kLeft )
-		{
-			case 4:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 3:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 2:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 1:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-
-			case 0:		;// nothing to do
-						
-		}
-
-
-		return theSum;
-	}
-
-
-	
-	// Other version of the Kahan algorithms - unrolled to check speed up
-	auto InnerProduct_KahanAlg_Unrolled_10( const double * v, const double * w, const size_t kElems )
-	{
-		DT theSum {};
-
-		// volatile prevents a compiler from applying any optimization
-		// on the object since it can be changed by someone else, etc.,
-		// in a way that cannot be foreseen by the compiler.
-
-		const size_t kLevels = 10;
-
-		/*const*/ size_t kRepeat	= kElems / kLevels;
-		const size_t kLeft		= kElems % kLevels;
-
-
-		volatile DT c {};		// a "correction" coefficient
-
-		DT y {}, t {};
-		
-		ST i {};
-		//for( i = 0; i < kRepeat; i += kLevels )
-		while( kRepeat -- != 0 )
-		{
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-			// -----------------------------
-			y = v[ i ] * w[ i ] - c;	
-			t = theSum + y;			
-			c = ( t - theSum ) - y;		
-			theSum = t;
-			++ i;
-
-		}
-
-
-		// Process what left - observe the reversed order 
-		switch( kLeft )
-		{
-			case 9:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 8:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 7:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 6:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						++ i;
-						theSum = t;
-
-			case 5:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 4:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 3:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 2:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-						++ i;
-
-			case 1:		y = v[ i ] * w[ i ] - c;	
-						t = theSum + y;			
-						c = ( t - theSum ) - y;		
-						theSum = t;
-
-			case 0:		;// nothing to do
-						
-		}
-
-
-		return theSum;
-	}
-
-
 
 
 	// Test the two
@@ -713,17 +393,12 @@ namespace InnerProducts
 		DVec z( std::min( v.size(), w.size() ) );		// Stores element-wise products
 
 		// Elementwise multiplication: c = a .* b
-		//transform(	v.begin(), v.end(), w.begin(), 
-		//			back_inserter( z ), 
-		//			[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
-
 		transform(	std::execution::par, v.begin(), v.end(), w.begin(), 
 					z.begin(), 
 					[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
 
 
-		//sort( std::execution::par, z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
-		sort( std::execution::par, z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return /*!*/ ( p < q ); } );		// Is it magic?
+		std::sort( std::execution::par, z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return fabs( p ) < fabs( q ); } );		// Is it magic?
 
 		// ------------------------
 
@@ -737,7 +412,7 @@ namespace InnerProducts
 
 		volatile DT c {};		// a "correction" factor
 
-		const ST kElems = /*std::min( v.size(), w.size() )*/z.size();
+		const ST kElems = z.size();
 
 		for( ST i = 0; i < kElems; ++ i )
 		{
@@ -769,10 +444,7 @@ namespace InnerProducts
 					back_inserter( z ), 
 					[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
 
-		//sort( z.begin(), z.end() );		// Is it magic?
-		//sort( z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
-		//sort( /*std::execution::par, */z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return std::fabs( p ) < std::fabs( q ); } );		// Is it magic?
-		sort( /*std::execution::par, */z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return ! ( p < q ); } );		// Is it magic?
+		std::sort( z.begin(), z.end(), [] ( const DT & p, const DT & q ) { return fabs( p ) < fabs( q ); } );		// Is it magic?
 
 		// ------------------------
 
@@ -786,9 +458,8 @@ namespace InnerProducts
 
 		volatile DT c {};		// a "correction" factor
 
-		//const ST kElems = z.size();
 
-		for( ST i = 0; i < /*kElems*/z.size(); ++ i )
+		for( ST i = 0; i < z.size(); ++ i )
 		{
 			DT y = z[ i ] - c;	// From the summand y subtract the correction factor
 
@@ -818,8 +489,6 @@ namespace InnerProducts
 		//                              exp               mantissa
 		using BNum = ttmath::Big< TTMATH_BITS( /*12*//*24*//*128*/384 ), TTMATH_BITS( /*54*//*128*//*256*/512 ) >;
 		using ExtraBNum = ttmath::Big< TTMATH_BITS( /*242*//*128*//*256*/512 ), TTMATH_BITS( /*128*//*512*/1024 ) >;
-		//using BNum = ttmath::Big< 4, 12 >;
-
 
 		using InnerProducts::DVec;
 
@@ -830,27 +499,21 @@ namespace InnerProducts
 
 			const DVec::size_type	kSize( std::min( v.size(), w.size() ) );
 
-			/*BNum*/ExtraBNum	theSum /*{ 0 }*/ = 0;	// The initialization is important here - do not use the initializer list
+			ExtraBNum	theSum  = 0;	// The initialization is important here - do not use the initializer list
 
-			BNum	tmp /*{ 0 }*/= 0;
+			BNum	tmp = 0;
 
 			double d {};
 
 			for( auto r : range( kSize ) )
 			{
 				tmp = v[ r ];
-				//d = tmp.ToDouble();
 
 				tmp *= w[ r ];
-				//d = tmp.ToDouble();
 
 				theSum = theSum + tmp;
-				//theSum += v[ r ] * w[ r ];
-				//d = theSum.ToDouble();
-
 			}
 
-			//d = theSum.ToDouble();
 			return theSum;
 		}
 
@@ -944,7 +607,7 @@ namespace InnerProducts
 			// Elementwise multiplication: c = a .* b
 			// Add parallelization to transform
 			transform(	v.begin(), v.end(), w.begin(), 
-						/*back_inserter( z )*/z.begin() + 1, 
+						z.begin() + 1, 
 						[] ( const auto & v_el, const auto & w_el) { return v_el * w_el; } );
 	
 			ExactSum mysum;
@@ -968,17 +631,6 @@ namespace InnerProducts
 		}
 
 
-		auto InnerProduct_908_par_b( const double * v, const double * w, const size_t kElems )
-		{
-			ExactSum mysum;
-			mysum.Reset();
-
-			for( auto i : range( kElems ) )
-				mysum.AddNumber( v[ i ] * w[ i ] );
-			
-			return mysum.GetSum();
-		}
-
 	}
 
 	//////////////
@@ -1000,7 +652,7 @@ namespace InnerProducts
 		const double * v_data_begin = & v[ 0 ];
 		const double * w_data_begin = & w[ 0 ];
 
-		vector< double >	par_sum( k_num_of_chunks, 0.0 );
+		vector< double >	par_sum( k_num_of_chunks + ( k_remainder > 0 ? 1 : 0 ), 0.0 );	
 
 		// The thing is that we wish Kahan because it is much faster than the sort-accum
 		auto fun_inter = [] ( const double * a, const double * b, int s ) { return InnerProduct_KahanAlg( a, b, s ); };
@@ -1016,7 +668,7 @@ namespace InnerProducts
 		if( k_remainder > 0 )
 			my_thread_poool.push_back( async( std::launch::async, fun_inter, v_data_begin + i * kChunkSize, w_data_begin + i * kChunkSize, k_remainder ) );
 
-		assert( k_num_of_chunks == my_thread_poool.size() );
+		assert( par_sum.size() == my_thread_poool.size() );
 		for( i = 0; i < my_thread_poool.size(); ++ i )
 			par_sum[ i ] = my_thread_poool[ i ].get();			// get() bocks until the async is done
 
@@ -1035,7 +687,7 @@ namespace InnerProducts
 		const double * v_data_begin = & v[ 0 ];
 		const double * w_data_begin = & w[ 0 ];
 
-		vector< double >	par_sum( k_num_of_chunks, 0.0 );
+		vector< double >	par_sum( k_num_of_chunks + ( k_remainder > 0 ? 1 : 0 ), 0.0 );	
 
 		// The thing is that we wish Kahan because it is much faster than the sort-accum
 		auto fun_inter = [] ( const double * a, const double * b, int s ) { return InnerProduct_Sort_KahanAlg( a, b, s ); };
@@ -1051,7 +703,8 @@ namespace InnerProducts
 		if( k_remainder > 0 )
 			my_thread_poool.push_back( async( std::launch::async, fun_inter, v_data_begin + i * kChunkSize, w_data_begin + i * kChunkSize, k_remainder ) );
 
-		for( size_t i = 0; i < k_num_of_chunks; ++ i )
+		assert( par_sum.size() == my_thread_poool.size() );
+		for( size_t i = 0; i < my_thread_poool.size(); ++ i )
 			par_sum[ i ] = my_thread_poool[ i ].get();
 
 
@@ -1065,16 +718,16 @@ namespace InnerProducts
 	{
 		const auto kMinSize { std::min( v.size(), w.size() ) };
 
-		const auto k_num_of_chunks { ( kMinSize / kChunkSize ) };
-		const auto k_remainder { kMinSize % kChunkSize };
+		const size_t k_num_of_chunks { ( kMinSize / kChunkSize ) };
+		const size_t k_remainder { kMinSize % kChunkSize };
 
 
 		const double * v_data_begin = & v[ 0 ];
 		const double * w_data_begin = & w[ 0 ];
 
-		vector< double >	par_sum( k_num_of_chunks, 0.0 );
+		vector< double >	par_sum( k_num_of_chunks + ( k_remainder > 0 ? 1 : 0 ), 0.0 );
 
-		// The thing is that we wish Kahan because it is much faster than the sort-accum
+		// The lambda for serial summation
 		auto fun_inter = [] ( const double * a, const double * b, int s ) { return ES::InnerProduct_908_par( a, b, s ); };
 
 		vector< future< double > >		my_thread_poool;
@@ -1086,9 +739,10 @@ namespace InnerProducts
 
 		// Process the ramainder, if present
 		if( k_remainder > 0 )
-			my_thread_poool.push_back( async( std::launch::async, fun_inter, v_data_begin + i * kChunkSize, w_data_begin + i * kChunkSize, k_remainder ) );
+			my_thread_poool.push_back( async( std::launch::async, fun_inter, v_data_begin + k_num_of_chunks * kChunkSize, w_data_begin + k_num_of_chunks * kChunkSize, k_remainder ) );
 
-		for( size_t i = 0; i < k_num_of_chunks; ++ i )
+		assert( par_sum.size() == my_thread_poool.size() );
+		for( auto i : range(  my_thread_poool.size() ) )
 			par_sum[ i ] = my_thread_poool[ i ].get();
 
 		return ES::Sum_908( par_sum );		
@@ -1103,7 +757,7 @@ namespace InnerProducts
 
 		// Both dimensions of v and w must be the same
 		// and must be an integer multiplication of the kChunkSize
-		const int kChunkSize { /*10000*/25000 /*(int) std::ceil( sqrt( (double) v.size() ) )*/ };
+		const int kChunkSize { /*10000*/25000/*24000*/ };
 
 
 		// The inner product should be close to 0.0, 
@@ -1184,9 +838,7 @@ namespace InnerProducts
 		// ---------
 		// 908
 		ts = timer::now();
-		//comp_error = fabs( ES::InnerProduct_908( v, w ) );
 		comp_error = fabs( ES::InnerProduct_908_b( v, w ) );
-		//comp_error = fabs( ES::InnerProduct_908_c( v, w ) );
 		tdur = get_duration( ts );
 		cout << "Serial 908 alg error = \t"	<< std::setprecision( 8 ) << comp_error << "\t\tT [ms] = " << tdur << endl;
 		result_errors.push_back( comp_error );
@@ -1208,7 +860,6 @@ namespace InnerProducts
 		// -----------------------------------------------
 		// Save results
 		ofstream res_file( "inner_results.txt", ios::app );
-		//res_file << /*kElems*/v.size() << /*"\t" << kDataMag <<*/ endl;
 		copy( result_errors.begin(), result_errors.end(), ostream_iterator< double >( res_file, "\t" ) );	res_file << endl;
 		copy( result_timing.begin(), result_timing.end(), ostream_iterator< double >( res_file, "\t" ) );	res_file << endl << endl;
 		// -----------------------------------------------
@@ -1221,7 +872,7 @@ namespace InnerProducts
 	void InnerProduct_Test_GeneralExperiment( void )
 	{
 
-		const int kElems = 40000000/*1000000*//*20000000*//*10000*/;
+		const int kElems = /*100*//*40000000*//*1000000*/20000000/*10000*/;
 
 		vector< int >	deltaExpVec { 10, 30, 50, 100, 300, 500/*, 1000, 2000*/ };
 
